@@ -182,8 +182,20 @@ with st.container(border=True):
     def highlight_abnormal(row):
         return ['background-color: #fce8e6' if row.final_label == 'abnormal' else '' for _ in row]
 
-    st.dataframe(
-        display_df.style.apply(highlight_abnormal, axis=1),
-        use_container_width=True,
-        height=300
-    )
+   # --- ABNORMAL BEATS TABLE ---
+st.subheader("🚨 Abnormal Heartbeats Detected")
+
+# We create a styled version of the dataframe
+def highlight_abnormal(val):
+    return 'background-color: #ffdbcc; color: black; font-weight: bold'
+
+# Filter for the abnormal ones
+abnormal_df = df[df['Is_Abnormal'] == 1].head(100)
+
+# Apply the style: forcing black text on the peach background
+styled_df = abnormal_df.style.applymap(
+    highlight_abnormal, 
+    subset=['Hybrid_Risk_Score', 'LSTM_Risk_Score']
+).set_properties(**{'color': 'black'}) # This forces ALL text to be black
+
+st.dataframe(styled_df, use_container_width=True)
