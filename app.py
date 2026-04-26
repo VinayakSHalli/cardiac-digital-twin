@@ -182,20 +182,29 @@ with st.container(border=True):
     def highlight_abnormal(row):
         return ['background-color: #fce8e6' if row.final_label == 'abnormal' else '' for _ in row]
 
-   # --- ABNORMAL BEATS TABLE ---
+  # --- ABNORMAL BEATS TABLE ---
 st.subheader("🚨 Abnormal Heartbeats Detected")
 
-# We create a styled version of the dataframe
-def highlight_abnormal(val):
-    return 'background-color: #ffdbcc; color: black; font-weight: bold'
+# 1. Smart Column Finder - scans for keywords to prevent crashes
+target_col = None
+for col in df.columns:
+    if 'Abnormal' in col or 'Label' in col or 'Risk' in col:
+        target_col = col
+        break
 
-# Filter for the abnormal ones
-abnormal_df = df[df['Is_Abnormal'] == 1].head(100)
+if target_col:
+    # 2. Filter using the column we found (shows first 100 abnormal rows)
+    abnormal_df = df[df[target_col] == 1].head(100)
 
-# Apply the style: forcing black text on the peach background
-styled_df = abnormal_df.style.applymap(
-    highlight_abnormal, 
-    subset=['Hybrid_Risk_Score', 'LSTM_Risk_Score']
-).set_properties(**{'color': 'black'}) # This forces ALL text to be black
+    # 3. High-Contrast Styling (Forced Black text on Peach)
+    def highlight_abnormal(s):
+        return ['background-color: #ffdbcc; color: black; font-weight: bold; border: 1px solid #ffb399'] * len(s)
 
-st.dataframe(styled_df, use_container_width=True)
+    st.dataframe(
+        abnormal_df.style.apply(highlight_abnormal, axis=1),
+        use_container_width=True
+    )
+else:
+    # Fallback: prevents the "red box" error if the column is missing
+    st.warning("Data Filter Warning: Could not find 'Abnormal' column. Displaying raw overview:")
+    st.dataframe(df.head(10).style.set_properties(**{'color': 'black', 'background-color': 'white'}))
