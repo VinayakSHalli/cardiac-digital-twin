@@ -14,7 +14,7 @@ st.markdown("""
     /* Force table text to be black regardless of theme */
     [data-testid="stTable"] td, [data-testid="stDataFrame"] td { color: black !important; }
     </style>
-    """, unsafe_allow_name_with_html=True)
+    """, unsafe_allow_html=True)
 
 # 2. Data Loading with ZIP support
 @st.cache_data
