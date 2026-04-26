@@ -23,8 +23,8 @@ st.markdown("""
 # --- DATA LOADING ---
 @st.cache_data
 def load_data():
-    # Loading results/hybrid_results.csv as specified
-    df = pd.read_csv('results/hybrid_results.csv')
+    # We added compression='zip' so it can read your uploaded zip file
+    df = pd.read_csv('results/hybrid_results.zip', compression='zip')
     return df
 
 try:
