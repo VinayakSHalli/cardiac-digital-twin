@@ -9,8 +9,10 @@ st.set_page_config(page_title="Cardiac Digital Twin", layout="wide")
 @st.cache_data
 def load_data():
     try:
-        # This reads your zip file
+        # Reading the zip file
         df = pd.read_csv('results/hybrid_results.zip', compression='zip')
+        # Clean column names (removes extra spaces)
+        df.columns = df.columns.str.strip()
         return df
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -19,49 +21,50 @@ def load_data():
 df = load_data()
 
 if df is not None:
+    # --- SMART COLUMN SEARCH ---
+    # We find the column names dynamically to prevent KeyErrors
+    hybrid_col = next((c for c in df.columns if 'hybrid' in c.lower() and 'risk' in c.lower()), df.columns[0])
+    lstm_col = next((c for c in df.columns if 'lstm' in c.lower() and 'risk' in c.lower()), df.columns[0])
+    target_col = next((c for c in df.columns if any(w in c.lower() for w in ['abnormal', 'label', 'target', 'class'])), None)
+
     # 3. Sidebar
     st.sidebar.header("📊 Global Performance")
     st.sidebar.metric("Hybrid F1 Score", "55.4%")
     
     st.title("🫀 Cardiac Digital Twin")
-    st.write("Phase-2 Evaluation")
+    st.write("Phase-2 Evaluation: Real-Time Monitoring Dashboard")
 
     # 4. Metrics
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Patient Heart Rate", "74 BPM")
     with col2:
-        avg_risk = round(df['Hybrid_Risk_Score'].mean() * 100, 1)
+        # Using the dynamically found column
+        avg_risk = round(df[hybrid_col].mean() * 100, 1)
         st.metric("Avg Hybrid Risk", f"{avg_risk}%")
     with col3:
         st.metric("System Status", "Live")
 
     # 5. Chart
     st.subheader("📈 Risk Score Timeline")
-    fig = px.line(df.head(500), y=['LSTM_Risk_Score', 'Hybrid_Risk_Score'], 
+    fig = px.line(df.head(500), y=[lstm_col, hybrid_col], 
                   color_discrete_sequence=["#ff9999", "#ff4b4b"])
+    fig.update_layout(plot_bgcolor="white")
     st.plotly_chart(fig, use_container_width=True)
 
-    # 6. THE TABLE (Simplified to avoid errors)
+    # 6. THE TABLE (Readable Contrast)
     st.subheader("🚨 Abnormal Heartbeats Detected")
     
-    # Simple search for the column
-    target_col = None
-    for col in df.columns:
-        if any(word in col.lower() for word in ['abnormal', 'label', 'target', 'class']):
-            target_col = col
-            break
-
     if target_col:
-        # Show first 50 abnormal rows
+        # Get abnormal rows
         abnormal_df = df[df[target_col] == 1].head(50)
         
-        # We use a very simple style that doesn't use complex CSS
+        # Applying styling: Peach background, Black text for contrast
         st.dataframe(abnormal_df.style.set_properties(**{
             'background-color': '#ffdbcc',
             'color': 'black',
             'font-weight': 'bold'
         }))
     else:
-        st.write("Displaying raw data (No 'Abnormal' column found):")
+        st.write("Overview (Abnormal column not found):")
         st.dataframe(df.head(20))
